@@ -42,7 +42,7 @@ router.post('/login', async (req, res) => {
 		}
     } catch (error) {
         console.error(error.message);
-        res.status(500).send('Something went wrong');
+        res.status(500).send('Failed to login user');
     }
 });
 
@@ -63,7 +63,7 @@ router.delete('/deleteuser', async (req, res) => {
 		}
 	} catch (error) {
 		console.error(error.message);
-		res.status(500).send('Something went wrong');
+		res.status(500).send('Failed to delete user');
 	}
 });
 

@@ -26,10 +26,10 @@ router.post('/users/:user_id/workouts', async (req, res) => {
         );
       }
   
-      res.status(201).json({ message: 'Workout created successfully' });
+      res.status(201).send('Workout created successfully');
     } catch (err) {
       console.error(err);
-      res.status(500).json({ message: 'Failed to create workout' });
+      res.status(500).send('Failed to create workout');
     }
 });
 
@@ -84,7 +84,7 @@ router.put('/workouts/:workout_id', async (req, res) => {
 		res.status(200).send('Workout modified successfully');
 	} catch (error) {
 		console.error(error.message);
-		res.status(500).send('Something went wrong');
+		res.status(500).send('Failed to modify workout');
 	}
 });
 
@@ -97,7 +97,7 @@ router.delete('/workouts/:workout_id', async (req, res) => {
 		res.status(200).send('Workout successfully deleted');
 	} catch (error) {
 		console.error(error.message);
-		res.status(500).send('Something went wrong');
+		res.status(500).send('Failed to delete workout');
 	}
 });
 

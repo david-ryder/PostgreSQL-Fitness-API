@@ -29,5 +29,6 @@ CREATE TABLE Sets (
     exercise_id INTEGER NOT NULL,
     weight INTEGER NOT NULL,
     reps INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (exercise_id) REFERENCES Exercises(exercise_id) ON DELETE CASCADE
 );
