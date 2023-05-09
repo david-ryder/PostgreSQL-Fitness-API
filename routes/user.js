@@ -75,7 +75,7 @@ router.get('/users', async (req, res) => {
        res.send(result.rows);
     } catch (error) {
         console.error(error.message);
-        res.status(500).send('Error creating new user');
+        res.status(500).send('Error fetching users');
     }
 });
 
