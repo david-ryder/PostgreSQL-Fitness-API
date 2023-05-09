@@ -3,8 +3,8 @@ const Pool = require('pg').Pool;
 
 // Instantiate db query object with credentials to access the database
 const pool = new Pool({
-    user: "davidwinfield",
-    password: "",
+    user: "postgres",
+    password: "david",
     database: "fitness_db",
     host: "localhost",
     port: 5432
