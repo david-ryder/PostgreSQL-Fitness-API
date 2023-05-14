@@ -7,19 +7,26 @@ const pool = require('../database_setup/database');
 // ===== USER FUNCTIONS =====
 // Create new user
 router.post('/register', async (req, res) => {
-    const {username, password} = req.body;
+    const { email, username, password } = req.body;
 
     try {
-        const result = await pool.query('SELECT user_id FROM Users WHERE username = $1', [username]);
-        // Username already exists
+        const result = await pool.query('SELECT user_id FROM Users WHERE email = $1', [email]);
+        // Email already exists
         if (result.rowCount > 0) {
-            res.status(400).send('Username already exists');
+            res.status(400).send('Email already exists');
         }
+        // Email is unique
         else {
-            await pool.query('INSERT INTO Users (username, password) VALUES ($1, $2)', [username, password]);
-            res.status(200).send('User created successfully');
+            const result = await pool.query('SELECT user_id FROM Users WHERE username = $1', [username]);
+            // Username already exists
+            if (result.rowCount > 0) {
+                res.status(400).send('Username already exists');
+            }
+            else {
+                await pool.query('INSERT INTO Users (email, username, password) VALUES ($1, $2, $3)', [email, username, password]);
+                res.status(200).send('User created successfully');
+            }
         }
-
     } catch (error) {
         console.error(error.message);
         res.status(500).send('Error creating new user');
@@ -28,7 +35,7 @@ router.post('/register', async (req, res) => {
 
 // Login a user
 router.post('/login', async (req, res) => {
-    const {username, password} = req.body;
+    const { username, password } = req.body;
 
     // Check if username and password combination is valid
     try {
@@ -49,7 +56,7 @@ router.post('/login', async (req, res) => {
 // Delete a user
 router.delete('/deleteuser', async (req, res) => {
 	try {
-		const {username} = req.body;
+		const { username } = req.body;
 		const result = await pool.query('SELECT user_id FROM Users WHERE username = $1', [username]);
 		// Username found
 		if (result.rowCount > 0) {

@@ -35,7 +35,7 @@ router.post('/users/:user_id/workouts', async (req, res) => {
 
 // Get all workouts belonging to a certain user
 router.get('/users/:user_id/workouts', async (req, res) => {
-	const {user_id} = req.params;
+	const { user_id } = req.params;
 
 	try {
 		const result = await pool.query('SELECT * FROM Workouts WHERE user_id = $1', [user_id]);
@@ -48,7 +48,7 @@ router.get('/users/:user_id/workouts', async (req, res) => {
 
 // Get all exercises belonging to a certain workout
 router.get('/workouts/:workout_id/exercises', async (req, res) => {
-	const {workout_id} = req.params;
+	const { workout_id } = req.params;
 
 	try {
 		const result = await pool.query('SELECT * FROM Exercises WHERE workout_id = $1', [workout_id]);
@@ -61,8 +61,8 @@ router.get('/workouts/:workout_id/exercises', async (req, res) => {
 
 // Modify workout
 router.put('/workouts/:workout_id', async (req, res) => {
-	const {workout_id} = req.params;
-	const {name, exercises} = req.body;
+	const { workout_id } = req.params;
+	const { name, exercises } = req.body;
 
 	try {
 		await pool.query('BEGIN');
@@ -90,7 +90,7 @@ router.put('/workouts/:workout_id', async (req, res) => {
 
 // Delete workout
 router.delete('/workouts/:workout_id', async (req, res) => {
-	const {workout_id} = req.params;
+	const { workout_id } = req.params;
 
 	try {
 		await pool.query('DELETE FROM Workouts WHERE workout_id = $1', [workout_id]);

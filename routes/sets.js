@@ -7,8 +7,8 @@ const pool = require('../database_setup/database');
 // ===== USER FUNCTIONS =====
 // Create a new set
 router.post('/exercises/:exercise_id/sets', async (req, res) => {
-    const {exercise_id} = req.params;
-    const {weight, reps} = req.body;
+    const { exercise_id } = req.params;
+    const { weight, reps } = req.body;
 
     try {
         const result = await pool.query('INSERT INTO Sets (exercise_id, weight, reps) VALUES ($1, $2, $3) RETURNING *', [exercise_id, weight, reps]);
@@ -21,7 +21,7 @@ router.post('/exercises/:exercise_id/sets', async (req, res) => {
 
 // Get all sets for this exercise
 router.get('/exercises/:exercise_id/sets', async (req, res) => {
-    const {exercise_id} = req.params;
+    const { exercise_id } = req.params;
 
     try {
         const result = await pool.query('SELECT * FROM Sets WHERE exercise_id = $1', [exercise_id]);
@@ -34,7 +34,7 @@ router.get('/exercises/:exercise_id/sets', async (req, res) => {
 
 // Delete a set
 router.delete('/sets/:set_id', async (req, res) => {
-    const {set_id} = req.params;
+    const { set_id } = req.params;
 
     try {
         await pool.query('DELETE FROM Sets WHERE set_id = $1', [set_id]);
