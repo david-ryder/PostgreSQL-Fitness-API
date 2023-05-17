@@ -74,16 +74,13 @@ router.put('/workouts/:workout_id', async (req, res) => {
 		if (exercises) {
 			// Get names and ids of exercises already in the database
 			const existingExercises = await pool.query('SELECT exercise_id, name FROM exercises WHERE workout_id = $1', [workout_id]);
-			console.log("Existing ", existingExercises.rows);
 
 			// Get names of exercises to keep from user's request
 			const exercisesToKeep = exercises.map((exercise) => exercise.name);
-			console.log("Keep ", exercisesToKeep);
 
 
 			// Delete all exercises that don't have a name match between the user's request and what's already in the db
 			const exercisesToDelete = existingExercises.rows.filter((exercise) => !exercisesToKeep.includes(exercise.name));
-			console.log("Delete ", exercisesToDelete);
 			for (const exercise of exercisesToDelete) {
 				await pool.query('DELETE FROM exercises WHERE exercise_id = $1', [exercise.exercise_id]);
 			}
