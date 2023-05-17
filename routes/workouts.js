@@ -65,22 +65,43 @@ router.put('/workouts/:workout_id', async (req, res) => {
 	const { name, exercises } = req.body;
 
 	try {
+		// Beginning of transaction
 		await pool.query('BEGIN');
 		// Modify name and return the workouts object
 		const result = await pool.query('UPDATE Workouts SET name = $1 WHERE workout_id = $2 RETURNING *', [name, workout_id]);
 
 		// Only update exercises if they are included in the request
 		if (exercises) {
-			// Delete existing exercises for this workout
-			await pool.query('DELETE FROM Exercises WHERE workout_id = $1', [workout_id]);
+			// Get names and ids of exercises already in the database
+			const existingExercises = await pool.query('SELECT exercise_id, name FROM exercises WHERE workout_id = $1', [workout_id]);
+			console.log("Existing ", existingExercises.rows);
 
-			// Insert new exercises into the workout
+			// Get names of exercises to keep from user's request
+			const exercisesToKeep = exercises.map((exercise) => exercise.name);
+			console.log("Keep ", exercisesToKeep);
+
+
+			// Delete all exercises that don't have a name match between the user's request and what's already in the db
+			const exercisesToDelete = existingExercises.rows.filter((exercise) => !exercisesToKeep.includes(exercise.name));
+			console.log("Delete ", exercisesToDelete);
+			for (const exercise of exercisesToDelete) {
+				await pool.query('DELETE FROM exercises WHERE exercise_id = $1', [exercise.exercise_id]);
+			}
+
+			// Insert the remaining exercises from the user's request
 			for (const exercise of exercises) {
-				await pool.query(
-					'INSERT INTO Exercises (workout_id, name) VALUES ($1, $2)', [workout_id, exercise.name]);
+
+				// Does this exercise already exist?
+				const existingExercise = existingExercises.rows.find((ex) => ex.name === exercise.name);
+
+				// If not, insert it
+				if (!existingExercise) {
+					await pool.query('INSERT INTO exercises (workout_id, name) VALUES ($1, $2)', [workout_id, exercise.name]);
+				}
 			}
 		}
-	
+		// Ends transaction
+		await pool.query('COMMIT');
 		res.status(200).send('Workout modified successfully');
 	} catch (error) {
 		console.error(error.message);
