@@ -13,7 +13,7 @@ Watch the video here:
 
 
 #### Technology used: ####
-- Node.JS and Express.JS for API endpoints
+- NodeJS and ExpressJS for API endpoints
 - PostgreSQL and SQL for database management
 - Postman for testing API endpoints
 - Docker for project containerization (to eventually deploy to AWS)
