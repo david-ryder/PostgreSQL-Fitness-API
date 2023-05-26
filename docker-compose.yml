@@ -1,9 +1,38 @@
-version: "3"
+# which version of docker-compose to use
+version: '3'
+
+# list all apps used in the stack
 services:
+  # name this app database
+  db:
+      # use pogtgres image
+      image: postgres
+      # configure the postgres image
+      environment:
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=postgres
+        - POSTGRES_DB=fitness_db
+      # where will the data be persisted, mounts a volume
+      volumes:
+        - ./pgdata:/var/lib/postgresql/data
+      # use these ports on host machine
+      ports:
+        - '5432:5432'
+
+  # name this app app
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # build using the dockerfile in the current directory
+    build: .
+    # use these ports on host machine
     ports:
-      - "3000:3000"
-    
+      - '3000:3000'
+    # pass environment variables to the "app service" to configure connecting to db
+    environment:
+      - POSTGRES_HOST=host.docker.internal
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=fitness_db
+      - POSTGRES_PORT=5432
+    # make sure "db" starts before "app" does
+    depends_on:
+      - db

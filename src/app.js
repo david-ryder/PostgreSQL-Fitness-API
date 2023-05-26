@@ -15,6 +15,12 @@ app.use(workoutExercisesRouter);
 app.use(setsRouter);
 
 // Setup app listener
-app.listen(port, () => {
-    console.log(`API running on port: ${port}`);
-});
+function startAPI() {
+    app.listen(port, () => {
+        console.log(`API running on port: ${port}`);
+    });
+};
+
+startAPI();
+
+let retries = 5;
