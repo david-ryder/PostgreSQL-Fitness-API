@@ -119,6 +119,40 @@ router.delete('/workouts/:workout_id', async (req, res) => {
 	}
 });
 
+// Get workout summary
+router.get('/workout-summary/:user_id', async (req, res) => {
+	const { user_id } = req.params;
+
+	try {
+		const result = await pool.query(`
+			SELECT
+				w.name AS workout_name,
+				e.name AS exercise_name,
+				s.weight,
+				s.reps
+			FROM
+				Workouts w
+				INNER JOIN Exercises e ON w.workout_id = e.workout_id
+				INNER JOIN Sets s ON e.exercise_id = s.exercise_id
+			WHERE
+				w.user_id = $1
+				AND w.created_at = (
+					SELECT MAX(created_at)
+					FROM Workouts
+					WHERE user_id = $1
+				)
+				AND s.created_at >= NOW() - INTERVAL '12 hours'
+			ORDER BY
+				e.name, s.created_at;
+		`, [user_id]);
+		res.status(200).json(result.rows);
+	}
+	catch (error) {
+		console.error(error.message);
+		res.status(500).send('Failed to get workout summary')
+	}
+})
+
 // ===== ADMIN FUNCTIONS =====
 // Get all workouts
 router.get('/workouts/', async (req, res) => {
