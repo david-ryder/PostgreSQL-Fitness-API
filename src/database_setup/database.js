@@ -38,6 +38,9 @@ const createSchemas = async () => {
                 exercise_id SERIAL PRIMARY KEY,
                 workout_id INTEGER NOT NULL,
                 name VARCHAR(50) NOT NULL,
+                target_sets INTEGER NOT NULL,
+                target_reps INTEGER NOT NULL,
+                weight_modifier INTEGER NOT NULL,
                 FOREIGN KEY (workout_id) REFERENCES Workouts(workout_id) ON DELETE CASCADE
             );
             

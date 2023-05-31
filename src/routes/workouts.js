@@ -16,13 +16,13 @@ router.post('/users/:user_id/workouts', async (req, res) => {
         'INSERT INTO Workouts (user_id, name) VALUES ($1, $2) RETURNING workout_id',
         [user_id, name]
       );
-      const workoutId = workoutResult.rows[0].workout_id;
+      const workout_id = workoutResult.rows[0].workout_id;
   
       // Insert the exercises
       for (const exercise of exercises) {
         await pool.query(
-          'INSERT INTO Exercises (workout_id, name) VALUES ($1, $2)',
-          [workoutId, exercise.name]
+          'INSERT INTO Exercises (workout_id, name, target_sets, target_reps, weight_modifier) VALUES ($1, $2, $3, $4, $5)',
+          [workout_id, exercise.name, exercise.target_sets, exercise.target_reps, exercise.weight_modifier]
         );
       }
   
@@ -78,7 +78,6 @@ router.put('/workouts/:workout_id', async (req, res) => {
 			// Get names of exercises to keep from user's request
 			const exercisesToKeep = exercises.map((exercise) => exercise.name);
 
-
 			// Delete all exercises that don't have a name match between the user's request and what's already in the db
 			const exercisesToDelete = existingExercises.rows.filter((exercise) => !exercisesToKeep.includes(exercise.name));
 			for (const exercise of exercisesToDelete) {
@@ -93,7 +92,8 @@ router.put('/workouts/:workout_id', async (req, res) => {
 
 				// If not, insert it
 				if (!existingExercise) {
-					await pool.query('INSERT INTO exercises (workout_id, name) VALUES ($1, $2)', [workout_id, exercise.name]);
+					await pool.query('INSERT INTO Exercises (workout_id, name, target_sets, target_reps, weight_modifier) VALUES ($1, $2, $3, $4, $5)',
+					[workout_id, exercise.name, exercise.target_sets, exercise.target_reps, exercise.weight_modifier]);
 				}
 			}
 		}
