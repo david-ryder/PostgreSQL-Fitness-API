@@ -260,8 +260,29 @@ router.get("/workout-summary/progression/:user_id", async (req, res) => {
         console.error(error.message);
         res.status(500).send("Failed to get requested information");
     }
+});
 
-    // For each exercise with a goal met, return its exercise_id
+// Update current_weight for specified exercises
+router.put("/progression", async (req, res) => {
+    const { exercise_ids } = req.body;
+
+    try {
+        for (const exercise_id in exercise_ids) {
+            // Increment the current_weight += weight_modifier
+            await pool.query(
+                `
+                UPDATE Exercises
+                SET current_weight = current_weight + (SELECT weight_modifier FROM Exercises WHERE exercise_id = $1)
+                WHERE exercise_id = $1
+            `,
+                [exercise_ids[exercise_id]]
+            );
+        }
+        res.status(200).json("Successfully progressed each exercise specified");
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json("Unable to progress workouts");
+    }
 });
 
 // ===== ADMIN FUNCTIONS =====
