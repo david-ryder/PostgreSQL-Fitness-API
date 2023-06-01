@@ -4,6 +4,9 @@ const router = express.Router();
 // Import the database query object
 const pool = require("../database_setup/database");
 
+// Import JWT functions from auth.js
+const { generateAccessToken, authenticatToken } = require("../auth");
+
 // ===== USER FUNCTIONS =====
 // Create new user
 router.post("/register", async (req, res) => {
@@ -28,11 +31,12 @@ router.post("/register", async (req, res) => {
             if (result.rowCount > 0) {
                 res.status(400).send("Username already exists");
             } else {
-                await pool.query(
-                    "INSERT INTO Users (email, username, password) VALUES ($1, $2, $3)",
+                const newUser = await pool.query(
+                    "INSERT INTO Users (email, username, password) VALUES ($1, $2, $3) RETURNING user_id",
                     [email, username, password]
                 );
-                res.status(200).send("User created successfully");
+                const token = generateAccessToken({ user_id: newUser.rows[0].user_id });
+                res.status(201).json({ token });
             }
         }
     } catch (error) {
@@ -41,7 +45,7 @@ router.post("/register", async (req, res) => {
     }
 });
 
-// Login a user
+// Login a user - verify credentials in database, give user access token
 router.post("/login", async (req, res) => {
     const { username, password } = req.body;
 
@@ -53,7 +57,8 @@ router.post("/login", async (req, res) => {
         );
         if (result.rowCount > 0) {
             const user_id = result.rows[0].user_id;
-            res.send(`Login successful, user_id: ${user_id}`);
+            const token = generateAccessToken({ user_id: user_id });
+            res.status(200).json({ token });
         } else {
             res.status(400).send("Invalid username or password");
         }
