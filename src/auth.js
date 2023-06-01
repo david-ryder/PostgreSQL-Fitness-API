@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 // Create an access token, store this on client side
 function generateAccessToken(payload) {
-    return jwt.sign(payload, process.env.TOKEN_SECRET, { expiresIn: "60s" });
+    return jwt.sign(payload, process.env.TOKEN_SECRET, { expiresIn: "7d" });
 }
 
 function authenticateToken(req, res, next) {

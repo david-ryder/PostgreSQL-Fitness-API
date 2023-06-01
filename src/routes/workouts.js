@@ -4,44 +4,54 @@ const router = express.Router();
 // Import the database query object
 const pool = require("../database_setup/database");
 
+// Import JWT functions from auth.js
+const { authenticateToken } = require("../auth");
+
 // ===== USER FUNCTIONS =====
 // Create new workout routine
-router.post("/users/:user_id/workouts", async (req, res) => {
+router.post("/users/:user_id/workouts", authenticateToken, async (req, res) => {
     const { user_id } = req.params;
     const { name, exercises } = req.body;
+    const authenticated_id = req.user.user_id.toString();
 
     try {
-        // Begin transaction
-        await pool.query("BEGIN");
+        if (user_id === authenticated_id) {
+            // Begin transaction
+            await pool.query("BEGIN");
 
-        // Insert the workout and retrieve its workout_id
-        const workoutResult = await pool.query(
-            "INSERT INTO Workouts (user_id, name) VALUES ($1, $2) RETURNING workout_id",
-            [user_id, name]
-        );
+            // Insert the workout and retrieve its workout_id
+            const workoutResult = await pool.query(
+                "INSERT INTO Workouts (user_id, name) VALUES ($1, $2) RETURNING workout_id",
+                [user_id, name]
+            );
 
-        const workout_id = workoutResult.rows[0].workout_id;
+            const workout_id = workoutResult.rows[0].workout_id;
 
-        // Insert the exercises
-        for (const exercise of exercises) {
-            await pool.query(
-                "INSERT INTO Exercises (workout_id, name, current_weight, target_sets, target_reps, weight_modifier) VALUES ($1, $2, $3, $4, $5, $6)",
-                [
-                    workout_id,
-                    exercise.name,
-                    exercise.current_weight,
-                    exercise.target_sets,
-                    exercise.target_reps,
-                    exercise.weight_modifier,
-                ]
+            // Insert the exercises
+            for (const exercise of exercises) {
+                await pool.query(
+                    "INSERT INTO Exercises (workout_id, name, current_weight, target_sets, target_reps, weight_modifier) VALUES ($1, $2, $3, $4, $5, $6)",
+                    [
+                        workout_id,
+                        exercise.name,
+                        exercise.current_weight,
+                        exercise.target_sets,
+                        exercise.target_reps,
+                        exercise.weight_modifier,
+                    ]
+                );
+            }
+
+            // Commit transaction
+            await pool.query("COMMIT");
+
+            // Send status message
+            res.status(201).send("Workout created successfully");
+        } else {
+            res.status(403).json(
+                "Unauthorized to create workout for this user"
             );
         }
-
-        // Commit transaction
-        await pool.query("COMMIT");
-
-        // Send status message
-        res.status(201).send("Workout created successfully");
     } catch (err) {
         // Rollback transaction on error
         await pool.query("ROLLBACK");
@@ -52,15 +62,20 @@ router.post("/users/:user_id/workouts", async (req, res) => {
 });
 
 // Get all workouts belonging to a certain user
-router.get("/users/:user_id/workouts", async (req, res) => {
+router.get("/users/:user_id/workouts", authenticateToken, async (req, res) => {
     const { user_id } = req.params;
+    const authenticated_id = req.user.user_id.toString();
 
     try {
-        const result = await pool.query(
-            "SELECT * FROM Workouts WHERE user_id = $1",
-            [user_id]
-        );
-        res.status(200).json(result.rows);
+        if (user_id === authenticated_id) {
+            const result = await pool.query(
+                "SELECT * FROM Workouts WHERE user_id = $1",
+                [user_id]
+            );
+            res.status(200).json(result.rows);
+        } else {
+            res.status(403).json("Unauthorized to access this user's workouts");
+        }
     } catch (error) {
         console.error(error.message);
         res.status(500).send("Error fetching this user's workouts");
@@ -79,7 +94,7 @@ router.get("/workouts/:workout_id/exercises", async (req, res) => {
         res.status(200).json(result.rows);
     } catch (error) {
         console.error(error.message);
-        res.status(500).send("Error fetching this user's exercises");
+        res.status(500).send("Error fetching this workout's exercises");
     }
 });
 
@@ -121,9 +136,9 @@ router.put("/workouts/:workout_id", async (req, res) => {
         if (exercises && exercises.length > 0) {
             const exerciseValues = exercises.map(
                 (exercise) =>
-                    `('${workout_id}', '${exercise.name}', '${exercise.current_weight}', ${exercise.target_sets}, ${exercise.target_reps}, ${exercise.weight_modifier})`
+                    `('${workout_id}', ${user_id}', '${exercise.name}', '${exercise.current_weight}', ${exercise.target_sets}, ${exercise.target_reps}, ${exercise.weight_modifier})`
             );
-            const exerciseInsertQuery = `INSERT INTO Exercises (workout_id, name, current_weight, target_sets, target_reps, weight_modifier) VALUES ${exerciseValues.join(
+            const exerciseInsertQuery = `INSERT INTO Exercises (workout_id, user_id, name, current_weight, target_sets, target_reps, weight_modifier) VALUES ${exerciseValues.join(
                 ","
             )}`;
             await pool.query(exerciseInsertQuery);

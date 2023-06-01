@@ -31,6 +31,7 @@ router.post("/register", async (req, res) => {
             if (result.rowCount > 0) {
                 res.status(400).send("Username already exists");
             } else {
+                await pool.query("BEGIN");
                 const newUser = await pool.query(
                     "INSERT INTO Users (email, username, password) VALUES ($1, $2, $3) RETURNING user_id",
                     [email, username, password]
@@ -38,10 +39,12 @@ router.post("/register", async (req, res) => {
                 const token = generateAccessToken({
                     user_id: newUser.rows[0].user_id,
                 });
+                await pool.query("COMMIT");
                 res.status(201).json({ token });
             }
         }
     } catch (error) {
+        await pool.query("ROLLBACK");
         console.error(error.message);
         res.status(500).send("Error creating new user");
     }
@@ -72,10 +75,10 @@ router.post("/login", async (req, res) => {
 
 // Delete a user
 router.delete("/deleteuser", authenticateToken, async (req, res) => {
-    try {
-        const { username } = req.body;
-        const user_id = req.user.user_id;
+    const { username } = req.body;
+    const user_id = req.user.user_id;
 
+    try {
         const result = await pool.query(
             "SELECT user_id FROM Users WHERE username = $1",
             [username]
