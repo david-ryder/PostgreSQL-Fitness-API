@@ -5,7 +5,7 @@ const router = express.Router();
 const pool = require("../database_setup/database");
 
 // Import JWT functions from auth.js
-const { generateAccessToken, authenticatToken } = require("../auth");
+const { generateAccessToken, authenticateToken } = require("../auth");
 
 // ===== USER FUNCTIONS =====
 // Create new user
@@ -35,7 +35,9 @@ router.post("/register", async (req, res) => {
                     "INSERT INTO Users (email, username, password) VALUES ($1, $2, $3) RETURNING user_id",
                     [email, username, password]
                 );
-                const token = generateAccessToken({ user_id: newUser.rows[0].user_id });
+                const token = generateAccessToken({
+                    user_id: newUser.rows[0].user_id,
+                });
                 res.status(201).json({ token });
             }
         }
@@ -69,18 +71,28 @@ router.post("/login", async (req, res) => {
 });
 
 // Delete a user
-router.delete("/deleteuser", async (req, res) => {
+router.delete("/deleteuser", authenticateToken, async (req, res) => {
     try {
         const { username } = req.body;
+        const user_id = req.user.user_id;
+
         const result = await pool.query(
             "SELECT user_id FROM Users WHERE username = $1",
             [username]
         );
         // Username found
         if (result.rowCount > 0) {
-            const user_id = result.rows[0].user_id;
-            await pool.query("DELETE FROM Users WHERE user_id = $1", [user_id]);
-            res.send(`User with username ${username} deleted successfully`);
+            const found_user_id = result.rows[0].user_id;
+
+            // Check if the authenticated user is the owner of the account
+            if (user_id === found_user_id) {
+                await pool.query("DELETE FROM Users WHERE user_id = $1", [
+                    user_id,
+                ]);
+                res.send(`User with username ${username} deleted successfully`);
+            } else {
+                res.status(403).json("Unauthorized to delete this user");
+            }
         }
         // No user with this username found
         else {
