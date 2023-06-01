@@ -1,132 +1,171 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 // Import the database query object
-const pool = require('../database_setup/database');
+const pool = require("../database_setup/database");
 
 // ===== USER FUNCTIONS =====
 // Create new workout routine
-router.post('/users/:user_id/workouts', async (req, res) => {
+router.post("/users/:user_id/workouts", async (req, res) => {
     const { user_id } = req.params;
     const { name, exercises } = req.body;
-  
+
     try {
-      // Insert the workout and retrieve its workout_id
-      const workoutResult = await pool.query(
-        'INSERT INTO Workouts (user_id, name) VALUES ($1, $2) RETURNING workout_id',
-        [user_id, name]
-      );
-      const workout_id = workoutResult.rows[0].workout_id;
-  
-      // Insert the exercises
-      for (const exercise of exercises) {
-        await pool.query(
-          'INSERT INTO Exercises (workout_id, name, target_sets, target_reps, weight_modifier) VALUES ($1, $2, $3, $4, $5)',
-          [workout_id, exercise.name, exercise.target_sets, exercise.target_reps, exercise.weight_modifier]
+        // Begin transaction
+        await pool.query("BEGIN");
+
+        // Insert the workout and retrieve its workout_id
+        const workoutResult = await pool.query(
+            "INSERT INTO Workouts (user_id, name) VALUES ($1, $2) RETURNING workout_id",
+            [user_id, name]
         );
-      }
-  
-      res.status(201).send('Workout created successfully');
+
+        const workout_id = workoutResult.rows[0].workout_id;
+
+        // Insert the exercises
+        for (const exercise of exercises) {
+            await pool.query(
+                "INSERT INTO Exercises (workout_id, name, current_weight, target_sets, target_reps, weight_modifier) VALUES ($1, $2, $3, $4, $5, $6)",
+                [
+                    workout_id,
+                    exercise.name,
+                    exercise.current_weight,
+                    exercise.target_sets,
+                    exercise.target_reps,
+                    exercise.weight_modifier,
+                ]
+            );
+        }
+
+        // Commit transaction
+        await pool.query("COMMIT");
+
+        // Send status message
+        res.status(201).send("Workout created successfully");
     } catch (err) {
-      console.error(err);
-      res.status(500).send('Failed to create workout');
+        // Rollback transaction on error
+        await pool.query("ROLLBACK");
+
+        console.error(err);
+        res.status(500).send("Failed to create workout");
     }
 });
 
 // Get all workouts belonging to a certain user
-router.get('/users/:user_id/workouts', async (req, res) => {
-	const { user_id } = req.params;
+router.get("/users/:user_id/workouts", async (req, res) => {
+    const { user_id } = req.params;
 
-	try {
-		const result = await pool.query('SELECT * FROM Workouts WHERE user_id = $1', [user_id]);
-		res.status(200).json(result.rows);
-	} catch (error) {
-		console.error(error.message);
-		res.status(500).send('Error fetching this user\'s workouts');
-	}
+    try {
+        const result = await pool.query(
+            "SELECT * FROM Workouts WHERE user_id = $1",
+            [user_id]
+        );
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Error fetching this user's workouts");
+    }
 });
 
 // Get all exercises belonging to a certain workout
-router.get('/workouts/:workout_id/exercises', async (req, res) => {
-	const { workout_id } = req.params;
+router.get("/workouts/:workout_id/exercises", async (req, res) => {
+    const { workout_id } = req.params;
 
-	try {
-		const result = await pool.query('SELECT * FROM Exercises WHERE workout_id = $1', [workout_id]);
-		res.status(200).json(result.rows);
-	} catch (error) {
-		console.error(error.message);
-		res.status(500).send('Error fetching this user\'s exercises');
-	}
+    try {
+        const result = await pool.query(
+            "SELECT * FROM Exercises WHERE workout_id = $1",
+            [workout_id]
+        );
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Error fetching this user's exercises");
+    }
 });
 
 // Modify workout
-router.put('/workouts/:workout_id', async (req, res) => {
-	const { workout_id } = req.params;
-	const { name, exercises } = req.body;
+router.put("/workouts/:workout_id", async (req, res) => {
+    const { workout_id } = req.params;
+    const { name, exercises } = req.body;
 
-	try {
-		// Beginning of transaction
-		await pool.query('BEGIN');
-		// Modify name and return the workouts object
-		const result = await pool.query('UPDATE Workouts SET name = $1 WHERE workout_id = $2 RETURNING *', [name, workout_id]);
+    try {
+        // Begin transaction
+        await pool.query("BEGIN");
 
-		// Only update exercises if they are included in the request
-		if (exercises) {
-			// Get names and ids of exercises already in the database
-			const existingExercises = await pool.query('SELECT exercise_id, name FROM exercises WHERE workout_id = $1', [workout_id]);
+        // Modify workout name
+        if (name) {
+            await pool.query(
+                "UPDATE Workouts SET name = $1 WHERE workout_id = $2",
+                [name, workout_id]
+            );
+        }
 
-			// Get names of exercises to keep from user's request
-			const exercisesToKeep = exercises.map((exercise) => exercise.name);
+        // Check if the workout exists
+        const workoutExists = await pool.query(
+            "SELECT workout_id FROM Workouts WHERE workout_id = $1",
+            [workout_id]
+        );
 
-			// Delete all exercises that don't have a name match between the user's request and what's already in the db
-			const exercisesToDelete = existingExercises.rows.filter((exercise) => !exercisesToKeep.includes(exercise.name));
-			for (const exercise of exercisesToDelete) {
-				await pool.query('DELETE FROM exercises WHERE exercise_id = $1', [exercise.exercise_id]);
-			}
+        if (workoutExists.rowCount === 0) {
+            // Workout does not exist, rollback transaction
+            await pool.query("ROLLBACK");
+            return res.status(404).send("Workout not found");
+        }
 
-			// Insert the remaining exercises from the user's request
-			for (const exercise of exercises) {
+        // Delete all existing exercises for the workout
+        await pool.query("DELETE FROM Exercises WHERE workout_id = $1", [
+            workout_id,
+        ]);
 
-				// Does this exercise already exist?
-				const existingExercise = existingExercises.rows.find((ex) => ex.name === exercise.name);
+        // Insert the updated exercises
+        if (exercises && exercises.length > 0) {
+            const exerciseValues = exercises.map(
+                (exercise) =>
+                    `('${workout_id}', '${exercise.name}', '${exercise.current_weight}', ${exercise.target_sets}, ${exercise.target_reps}, ${exercise.weight_modifier})`
+            );
+            const exerciseInsertQuery = `INSERT INTO Exercises (workout_id, name, current_weight, target_sets, target_reps, weight_modifier) VALUES ${exerciseValues.join(
+                ","
+            )}`;
+            await pool.query(exerciseInsertQuery);
+        }
 
-				// If not, insert it
-				if (!existingExercise) {
-					await pool.query('INSERT INTO Exercises (workout_id, name, target_sets, target_reps, weight_modifier) VALUES ($1, $2, $3, $4, $5)',
-					[workout_id, exercise.name, exercise.target_sets, exercise.target_reps, exercise.weight_modifier]);
-				}
-			}
-		}
-		// Ends transaction
-		await pool.query('COMMIT');
-		res.status(200).send('Workout modified successfully');
-	} catch (error) {
-		console.error(error.message);
-		res.status(500).send('Failed to modify workout');
-	}
+        // Commit transaction
+        await pool.query("COMMIT");
+        res.status(200).send("Workout modified successfully");
+    } catch (error) {
+        // Rollback transaction on error
+        await pool.query("ROLLBACK");
+        console.error(error.message);
+        res.status(500).send("Failed to modify workout");
+    }
 });
 
 // Delete workout
-router.delete('/workouts/:workout_id', async (req, res) => {
-	const { workout_id } = req.params;
+router.delete("/workouts/:workout_id", async (req, res) => {
+    const { workout_id } = req.params;
 
-	try {
-		await pool.query('DELETE FROM Workouts WHERE workout_id = $1', [workout_id]);
-		res.status(200).send('Workout successfully deleted');
-	} catch (error) {
-		console.error(error.message);
-		res.status(500).send('Failed to delete workout');
-	}
+    try {
+        await pool.query("DELETE FROM Workouts WHERE workout_id = $1", [
+            workout_id,
+        ]);
+        res.status(200).send("Workout successfully deleted");
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Failed to delete workout");
+    }
 });
 
 // Get workout summary
-router.get('/workout-summary/:user_id', async (req, res) => {
-	const { user_id } = req.params;
+router.get("/workout-summary/:user_id", async (req, res) => {
+    const { user_id } = req.params;
 
-	try {
-		const result = await pool.query(`
+    try {
+        const result = await pool.query(
+            `
 			SELECT
+                w.workout_id AS workout_id,
 				w.name AS workout_name,
+                e.exercise_id AS exercise_id,
 				e.name AS exercise_name,
 				s.weight,
 				s.reps
@@ -144,36 +183,108 @@ router.get('/workout-summary/:user_id', async (req, res) => {
 				AND s.created_at >= NOW() - INTERVAL '12 hours'
 			ORDER BY
 				e.name, s.created_at;
-		`, [user_id]);
-		res.status(200).json(result.rows);
-	}
-	catch (error) {
-		console.error(error.message);
-		res.status(500).send('Failed to get workout summary')
-	}
-})
+		`,
+            [user_id]
+        );
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Failed to get workout summary");
+    }
+});
+
+// Get all exercises eligible for progression
+router.get("/workout-summary/progression/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        // Get all sets completed within past 12 hours
+        const sets = await pool.query(
+            `
+            SELECT Sets.*
+            FROM Sets
+            INNER JOIN Exercises ON Sets.exercise_id = Exercises.exercise_id
+            INNER JOIN Workouts ON Exercises.workout_id = Workouts.workout_id
+            WHERE
+                Sets.created_at >= NOW() - INTERVAL '12 hours'
+                AND Workouts.user_id = $1
+        `,
+            [user_id]
+        );
+
+        const set_ids = sets.rows.map((set) => set.set_id);
+        const set_ids_to_string = set_ids.join(",");
+
+        // Get all exercises attached to those sets
+        const exercises = await pool.query(
+            `
+            SELECT DISTINCT Exercises.*
+            FROM Exercises
+            WHERE Exercises.exercise_id IN (
+                SELECT DISTINCT exercise_id
+                FROM Sets
+                WHERE set_id IN (${set_ids_to_string})
+            )
+            `
+        );
+
+        const available_exercises = [];
+
+        // For each exercise, determine if the goal was met:
+        // reps >= target reps
+        exercises.rows.forEach((exercise) => {
+            const exercise_id = exercise.exercise_id;
+            const matching_sets = sets.rows.filter(
+                (set) => set.exercise_id === exercise_id
+            );
+            const set_count = matching_sets.length;
+            console.log(`set count: ${set_count}`);
+
+            // Check sets requirement
+            if (set_count >= exercise.target_sets) {
+                const is_eligible = matching_sets.every((set) => {
+                    return (
+                        set.reps >= exercise.target_reps &&
+                        set.weight >= exercise.current_weight
+                    );
+                });
+
+                if (is_eligible) {
+                    available_exercises.push(exercise);
+                }
+            }
+        });
+
+        res.status(200).json(available_exercises);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Failed to get requested information");
+    }
+
+    // For each exercise with a goal met, return its exercise_id
+});
 
 // ===== ADMIN FUNCTIONS =====
 // Get all workouts
-router.get('/workouts/', async (req, res) => {
+router.get("/workouts/", async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM Workouts');
+        const result = await pool.query("SELECT * FROM Workouts");
         res.send(result.rows);
-     } catch (error) {
-         console.error(error.message);
-         res.status(500).send('Error fetching workouts');
-     }
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Error fetching workouts");
+    }
 });
 
 // Get all exercises
-router.get('/exercises', async (req, res) => {
+router.get("/exercises", async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM Exercises');
+        const result = await pool.query("SELECT * FROM Exercises");
         res.send(result.rows);
-     } catch (error) {
-         console.error(error.message);
-         res.status(500).send('Error fetching exercises');
-     }
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Error fetching exercises");
+    }
 });
 
 module.exports = router;

@@ -21,6 +21,7 @@ CREATE TABLE Exercises (
     exercise_id SERIAL PRIMARY KEY,
     workout_id INTEGER NOT NULL,
     name VARCHAR(50) NOT NULL,
+    current_weight INTEGER NOT NULL,
     target_sets INTEGER NOT NULL,
     target_reps INTEGER NOT NULL,
     weight_modifier INTEGER NOT NULL,
