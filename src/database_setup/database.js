@@ -1,15 +1,15 @@
 // Set up database query object
-const fs = require('fs');
-const { connect } = require('http2');
-const { Pool } = require('pg');
+const fs = require("fs");
+const { connect } = require("http2");
+const { Pool } = require("pg");
 
 // Instantiate db query object with credentials to access the database
 const pool = new Pool({
-    host: 'host.docker.internal',
+    host: "host.docker.internal",
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
-    port: process.env.POSTGRES_PORT
+    port: process.env.POSTGRES_PORT,
 });
 
 const createSchemas = async () => {
@@ -55,35 +55,31 @@ const createSchemas = async () => {
                 FOREIGN KEY (exercise_id) REFERENCES Exercises(exercise_id) ON DELETE CASCADE
             );
         `);
-        console.log('SQL script executed successfully');
+        console.log("SQL script executed successfully");
+    } catch (error) {
+        console.error("Error executing SQL script:", error.message);
     }
-    catch (error) {
-        console.error('Error executing SQL script:', error.message);
-    }
-}
+};
 
 // Connects to database
 function connectToDatabase() {
     pool.connect((error) => {
         if (error) {
-            console.error('Error connecting to database:', new Date());
+            console.error("Error connecting to database:", new Date());
             retryConnection();
-        }
-        else {
-            console.log('Successfully connected to database');
+        } else {
+            console.log("Successfully connected to database");
             createSchemas();
         }
     });
 }
 
-
 // 5 chances to connect to database, 2 second intervals
 let retries = 5;
 function retryConnection() {
-
     const tryConnect = () => {
         if (retries === 0) {
-            console.log('Exhausted connection retries');
+            console.log("Exhausted connection retries");
             return;
         }
 
@@ -94,7 +90,7 @@ function retryConnection() {
 
         retries--;
     };
-    
+
     tryConnect();
 }
 

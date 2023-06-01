@@ -6,7 +6,6 @@ CREATE TABLE Users (
     email VARCHAR(255) UNIQUE NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
-
 -- create the Workouts table
 CREATE TABLE Workouts (
     workout_id SERIAL PRIMARY KEY,
@@ -15,7 +14,6 @@ CREATE TABLE Workouts (
     created_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
-
 -- create the Exercises table
 CREATE TABLE Exercises (
     exercise_id SERIAL PRIMARY KEY,
@@ -27,7 +25,6 @@ CREATE TABLE Exercises (
     weight_modifier INTEGER NOT NULL,
     FOREIGN KEY (workout_id) REFERENCES Workouts(workout_id) ON DELETE CASCADE
 );
-
 -- create the Sets table
 CREATE TABLE Sets (
     set_id SERIAL PRIMARY KEY,
