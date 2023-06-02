@@ -33,6 +33,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=fitness_db
       - POSTGRES_PORT=5432
+      - TOKEN_SECRET=bba0d028fe1d5d59dbe64b8dc0105815c4e57920b1716d535ec70779510b06029335d1e71af253741ca1a81a88e40bbb38e4eefc2b6563083e3faca003e311dc
     # make sure "db" starts before "app" does
     depends_on:
       - db

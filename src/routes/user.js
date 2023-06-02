@@ -4,6 +4,9 @@ const router = express.Router();
 // Import the database query object
 const pool = require("../database_setup/database");
 
+// Import JWT functions from auth.js
+const { generateAccessToken, authenticateToken } = require("../auth");
+
 // ===== USER FUNCTIONS =====
 // Create new user
 router.post("/register", async (req, res) => {
@@ -28,20 +31,26 @@ router.post("/register", async (req, res) => {
             if (result.rowCount > 0) {
                 res.status(400).send("Username already exists");
             } else {
-                await pool.query(
-                    "INSERT INTO Users (email, username, password) VALUES ($1, $2, $3)",
+                await pool.query("BEGIN");
+                const newUser = await pool.query(
+                    "INSERT INTO Users (email, username, password) VALUES ($1, $2, $3) RETURNING user_id",
                     [email, username, password]
                 );
-                res.status(200).send("User created successfully");
+                const token = generateAccessToken({
+                    user_id: newUser.rows[0].user_id,
+                });
+                await pool.query("COMMIT");
+                res.status(201).json({ token });
             }
         }
     } catch (error) {
+        await pool.query("ROLLBACK");
         console.error(error.message);
         res.status(500).send("Error creating new user");
     }
 });
 
-// Login a user
+// Login a user - verify credentials in database, give user access token
 router.post("/login", async (req, res) => {
     const { username, password } = req.body;
 
@@ -53,7 +62,8 @@ router.post("/login", async (req, res) => {
         );
         if (result.rowCount > 0) {
             const user_id = result.rows[0].user_id;
-            res.send(`Login successful, user_id: ${user_id}`);
+            const token = generateAccessToken({ user_id: user_id });
+            res.status(200).json({ token });
         } else {
             res.status(400).send("Invalid username or password");
         }
@@ -64,18 +74,28 @@ router.post("/login", async (req, res) => {
 });
 
 // Delete a user
-router.delete("/deleteuser", async (req, res) => {
+router.delete("/deleteuser", authenticateToken, async (req, res) => {
+    const { username } = req.body;
+    const user_id = req.user.user_id;
+
     try {
-        const { username } = req.body;
         const result = await pool.query(
             "SELECT user_id FROM Users WHERE username = $1",
             [username]
         );
         // Username found
         if (result.rowCount > 0) {
-            const user_id = result.rows[0].user_id;
-            await pool.query("DELETE FROM Users WHERE user_id = $1", [user_id]);
-            res.send(`User with username ${username} deleted successfully`);
+            const found_user_id = result.rows[0].user_id;
+
+            // Check if the authenticated user is the owner of the account
+            if (user_id === found_user_id) {
+                await pool.query("DELETE FROM Users WHERE user_id = $1", [
+                    user_id,
+                ]);
+                res.send(`User with username ${username} deleted successfully`);
+            } else {
+                res.status(403).json("Unauthorized to delete this user");
+            }
         }
         // No user with this username found
         else {
