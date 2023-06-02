@@ -18,6 +18,7 @@ CREATE TABLE Workouts (
 CREATE TABLE Exercises (
     exercise_id SERIAL PRIMARY KEY,
     workout_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
     name VARCHAR(50) NOT NULL,
     current_weight INTEGER NOT NULL,
     target_sets INTEGER NOT NULL,
@@ -29,6 +30,7 @@ CREATE TABLE Exercises (
 CREATE TABLE Sets (
     set_id SERIAL PRIMARY KEY,
     exercise_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
     weight INTEGER NOT NULL,
     reps INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),

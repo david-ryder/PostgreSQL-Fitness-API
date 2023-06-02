@@ -4,34 +4,69 @@ const router = express.Router();
 // Import the database query object
 const pool = require("../database_setup/database");
 
+// Import JWT functions from auth.js
+const { authenticateToken } = require("../auth");
+
 // ===== USER FUNCTIONS =====
 // Create a new set
-router.post("/exercises/:exercise_id/sets", async (req, res) => {
-    const { exercise_id } = req.params;
-    const { weight, reps } = req.body;
+router.post("/exercises/:exercise_id/sets", authenticateToken, async (req, res) => {
+        const { exercise_id } = req.params;
+        const { weight, reps } = req.body;
+        const authenticated_id = req.user.user_id.toString();
 
-    try {
-        const result = await pool.query(
-            "INSERT INTO Sets (exercise_id, weight, reps) VALUES ($1, $2, $3) RETURNING *",
-            [exercise_id, weight, reps]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).send("Failed to create set");
+        try {
+            const userResult = await pool.query(
+                "SELECT user_id FROM Exercises WHERE exercise_id = $1",
+                [exercise_id]
+            );
+
+            const user_id = userResult.rows[0].user_id.toString();
+
+            if (user_id === authenticated_id) {
+                await pool.query("BEGIN");
+                const result = await pool.query(
+                    "INSERT INTO Sets (exercise_id, user_id, weight, reps) VALUES ($1, $2, $3, $4) RETURNING *",
+                    [exercise_id, user_id, weight, reps]
+                );
+                await pool.query("COMMIT");
+                res.status(201).json(result.rows[0]);
+            } else {
+                res.status(403).json(
+                    "Unauthorized to create workout for this user"
+                );
+            }
+        } catch (error) {
+            console.error(error.message);
+            await pool.query("ROLLBACK");
+            res.status(500).send("Failed to create set");
+        }
     }
-});
+);
 
 // Get all sets for this exercise
-router.get("/exercises/:exercise_id/sets", async (req, res) => {
+router.get("/exercises/:exercise_id/sets", authenticateToken, async (req, res) => {
     const { exercise_id } = req.params;
+    const authenticated_id = req.user.user_id.toString();
 
     try {
-        const result = await pool.query(
-            "SELECT * FROM Sets WHERE exercise_id = $1",
+        const userResult = await pool.query(
+            "SELECT user_id FROM Exercises WHERE exercise_id = $1",
             [exercise_id]
         );
-        res.status(200).json(result.rows);
+
+        const user_id = userResult.rows[0].user_id.toString();
+
+        if (user_id === authenticated_id) {
+            const result = await pool.query(
+                "SELECT * FROM Sets WHERE exercise_id = $1",
+                [exercise_id]
+            );
+            res.status(200).json(result.rows);
+        } else {
+            res.status(403).json(
+                "Unauthorized to create workout for this user"
+            );
+        }
     } catch (error) {
         console.error(error.message);
         res.status(500).send("Failed to fetch sets");
@@ -39,12 +74,26 @@ router.get("/exercises/:exercise_id/sets", async (req, res) => {
 });
 
 // Delete a set
-router.delete("/sets/:set_id", async (req, res) => {
+router.delete("/sets/:set_id", authenticateToken, async (req, res) => {
     const { set_id } = req.params;
+    const authenticated_id = req.user.user_id.toString();
 
     try {
-        await pool.query("DELETE FROM Sets WHERE set_id = $1", [set_id]);
-        res.status(200).send("Successfully deleted set");
+        const userResult = await pool.query(
+            "SELECT user_id FROM Sets WHERE set_id = $1",
+            [set_id]
+        );
+
+        const user_id = userResult.rows[0].user_id.toString();
+
+        if (user_id === authenticated_id) {
+            await pool.query("DELETE FROM Sets WHERE set_id = $1", [set_id]);
+            res.status(200).send("Successfully deleted set");
+        } else {
+            res.status(403).json(
+                "Unauthorized to create workout for this user"
+            );
+        }
     } catch (error) {
         console.error(error.message);
         res.status(500).send("Failed to delete set");
