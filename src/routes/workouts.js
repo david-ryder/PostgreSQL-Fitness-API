@@ -336,7 +336,7 @@ router.put("/progression/:user_id", authenticateToken, async (req, res) => {
             res.status(200).json("Successfully progressed each exercise specified");
         } catch (error) {
             console.error(error.message);
-            res.status(500).json("Unable to progress workouts");
+            res.status(500).json("Unable to progress exercises");
         }
     } else {
         res.status(403).json(
