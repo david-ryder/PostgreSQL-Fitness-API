@@ -9,7 +9,7 @@ services:
       image: postgres
       # configure the postgres image
       env_file:
-      - ./env/database.env
+        - ./env/database.env
       # where will the data be persisted, mounts a volume
       volumes:
         - ./pgdata:/var/lib/postgresql/data

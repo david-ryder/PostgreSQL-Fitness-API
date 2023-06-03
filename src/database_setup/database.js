@@ -64,7 +64,7 @@ const createSchemas = async () => {
 function connectToDatabase() {
     pool.connect((error) => {
         if (error) {
-            console.error("Error connecting to database:", new Date());
+            console.error("Error connecting to database:", error.message, new Date());
             retryConnection();
         } else {
             console.log("Successfully connected to database");
