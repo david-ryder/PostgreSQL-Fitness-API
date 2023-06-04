@@ -9,20 +9,19 @@ const { authenticateToken } = require("../auth");
 
 // ===== USER FUNCTIONS =====
 // Create new workout routine
-router.post("/users/:user_id/workouts", authenticateToken, async (req, res) => {
-    const { user_id } = req.params;
+router.post("/users/workouts", authenticateToken, async (req, res) => {
     const { name, exercises } = req.body;
     const authenticated_id = req.user.user_id.toString();
 
     try {
-        if (user_id === authenticated_id) {
+        if (authenticated_id) {
             // Begin transaction
             await pool.query("BEGIN");
 
             // Insert the workout and retrieve its workout_id
             const workoutResult = await pool.query(
                 "INSERT INTO Workouts (user_id, name) VALUES ($1, $2) RETURNING workout_id",
-                [user_id, name]
+                [authenticated_id, name]
             );
 
             const workout_id = workoutResult.rows[0].workout_id;
@@ -33,7 +32,7 @@ router.post("/users/:user_id/workouts", authenticateToken, async (req, res) => {
                     "INSERT INTO Exercises (workout_id, user_id, name, current_weight, target_sets, target_reps, weight_modifier) VALUES ($1, $2, $3, $4, $5, $6, $7)",
                     [
                         workout_id,
-                        user_id,
+                        authenticated_id,
                         exercise.name,
                         exercise.current_weight,
                         exercise.target_sets,
@@ -63,19 +62,18 @@ router.post("/users/:user_id/workouts", authenticateToken, async (req, res) => {
 });
 
 // Get all workouts belonging to a certain user
-router.get("/users/:user_id/workouts", authenticateToken, async (req, res) => {
-    const { user_id } = req.params;
+router.get("/users/workouts", authenticateToken, async (req, res) => {
     const authenticated_id = req.user.user_id.toString();
 
     // user_ids match
-    if (user_id === authenticated_id) {
+    if (authenticated_id) {
         // try to run the query
         try {
             const result = [];
 
             const workouts = await pool.query(
                 "SELECT * FROM Workouts WHERE user_id = $1",
-                [user_id]
+                [authenticated_id]
             );
 
             for (const workout of workouts.rows) {
