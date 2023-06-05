@@ -78,13 +78,13 @@ router.get("/users/workouts", authenticateToken, async (req, res) => {
 
             for (const workout of workouts.rows) {
                 const exercises = await pool.query(
-                    "SELECT * FROM Exercises WHERE workout_id = $1",
+                    "SELECT name FROM Exercises WHERE workout_id = $1",
                     [workout.workout_id]
                 );
 
                 result.push({
                     workout: workout,
-                    exercises: exercises.rows
+                    exercises: exercises.rows,
                 });
             }
 
@@ -100,6 +100,33 @@ router.get("/users/workouts", authenticateToken, async (req, res) => {
     }
 });
 
+// Get all exercises belonging to this workout
+router.get("/workouts/:workout_id", authenticateToken, async (req, res) => {
+    const { workout_id } = req.params;
+    const authenticated_id = req.user.user_id.toString();
+
+    // user_ids match
+    if (authenticated_id) {
+        // try to run the query
+        try {
+            const exercises = await pool.query(
+                "SELECT * FROM Exercises WHERE workout_id = $1",
+                [workout_id]
+            );
+
+            res.status(200).json(exercises.rows);
+        } catch (error) {
+            console.error(error.message);
+            res.status(500).json(
+                "Failed to get exercises belonging to this workout"
+            );
+        }
+    }
+    else {
+        res.status(403).json("Unauthorized to get exercises for this workout");
+    }
+});
+
 // Modify workout
 router.put("/workouts/:workout_id", authenticateToken, async (req, res) => {
     const { workout_id } = req.params;
@@ -107,15 +134,17 @@ router.put("/workouts/:workout_id", authenticateToken, async (req, res) => {
     const authenticated_id = req.user.user_id.toString();
 
     try {
-        const userResult = await pool.query("SELECT user_id FROM Workouts WHERE workout_id = $1",
-        [workout_id]);
+        const userResult = await pool.query(
+            "SELECT user_id FROM Workouts WHERE workout_id = $1",
+            [workout_id]
+        );
 
         const user_id = userResult.rows[0].user_id.toString();
 
         if (user_id === authenticated_id) {
             // Begin transaction
             await pool.query("BEGIN");
-    
+
             // Modify workout name
             if (name) {
                 await pool.query(
@@ -123,24 +152,24 @@ router.put("/workouts/:workout_id", authenticateToken, async (req, res) => {
                     [name, workout_id]
                 );
             }
-    
+
             // Check if the workout exists
             const workoutExists = await pool.query(
                 "SELECT workout_id FROM Workouts WHERE workout_id = $1",
                 [workout_id]
             );
-    
+
             if (workoutExists.rowCount === 0) {
                 // Workout does not exist, rollback transaction
                 await pool.query("ROLLBACK");
                 return res.status(404).send("Workout not found");
             }
-    
+
             // Delete all existing exercises for the workout
             await pool.query("DELETE FROM Exercises WHERE workout_id = $1", [
                 workout_id,
             ]);
-    
+
             // Insert the updated exercises
             if (exercises && exercises.length > 0) {
                 const exerciseValues = exercises.map(
@@ -152,7 +181,7 @@ router.put("/workouts/:workout_id", authenticateToken, async (req, res) => {
                 )}`;
                 await pool.query(exerciseInsertQuery);
             }
-    
+
             // Commit transaction
             await pool.query("COMMIT");
             res.status(200).send("Workout modified successfully");
@@ -173,8 +202,10 @@ router.delete("/workouts/:workout_id", authenticateToken, async (req, res) => {
     const authenticated_id = req.user.user_id.toString();
 
     try {
-        const userResult = await pool.query("SELECT user_id FROM Workouts WHERE workout_id = $1",
-        [workout_id]);
+        const userResult = await pool.query(
+            "SELECT user_id FROM Workouts WHERE workout_id = $1",
+            [workout_id]
+        );
 
         const user_id = userResult.rows[0].user_id.toString();
 
@@ -231,22 +262,23 @@ router.get("/workout-summary/:user_id", authenticateToken, async (req, res) => {
             res.status(500).send("Failed to get workout summary");
         }
     } else {
-        res.status(403).json(
-            "Unauthorized to create workout for this user"
-        );
+        res.status(403).json("Unauthorized to create workout for this user");
     }
 });
 
 // Get all exercises eligible for progression
-router.get("/workout-summary/progression/:user_id", authenticateToken, async (req, res) => {
-    const { user_id } = req.params;
-    const authenticated_id = req.user.user_id.toString();
+router.get(
+    "/workout-summary/progression/:user_id",
+    authenticateToken,
+    async (req, res) => {
+        const { user_id } = req.params;
+        const authenticated_id = req.user.user_id.toString();
 
-    if (user_id === authenticated_id) {
-        try {
-            // Get all sets completed within past 12 hours
-            const sets = await pool.query(
-                `
+        if (user_id === authenticated_id) {
+            try {
+                // Get all sets completed within past 12 hours
+                const sets = await pool.query(
+                    `
                 SELECT Sets.*
                 FROM Sets
                 INNER JOIN Exercises ON Sets.exercise_id = Exercises.exercise_id
@@ -255,15 +287,15 @@ router.get("/workout-summary/progression/:user_id", authenticateToken, async (re
                     Sets.created_at >= NOW() - INTERVAL '12 hours'
                     AND Workouts.user_id = $1
             `,
-                [user_id]
-            );
-    
-            const set_ids = sets.rows.map((set) => set.set_id);
-            const set_ids_to_string = set_ids.join(",");
-    
-            // Get all exercises attached to those sets
-            const exercises = await pool.query(
-                `
+                    [user_id]
+                );
+
+                const set_ids = sets.rows.map((set) => set.set_id);
+                const set_ids_to_string = set_ids.join(",");
+
+                // Get all exercises attached to those sets
+                const exercises = await pool.query(
+                    `
                 SELECT DISTINCT Exercises.*
                 FROM Exercises
                 WHERE Exercises.exercise_id IN (
@@ -272,45 +304,46 @@ router.get("/workout-summary/progression/:user_id", authenticateToken, async (re
                     WHERE set_id IN (${set_ids_to_string})
                 )
                 `
-            );
-    
-            const available_exercises = [];
-    
-            // For each exercise, determine if the goal was met:
-            // reps >= target reps
-            exercises.rows.forEach((exercise) => {
-                const exercise_id = exercise.exercise_id;
-                const matching_sets = sets.rows.filter(
-                    (set) => set.exercise_id === exercise_id
                 );
-                const set_count = matching_sets.length;
-    
-                // Check sets requirement
-                if (set_count >= exercise.target_sets) {
-                    const is_eligible = matching_sets.every((set) => {
-                        return (
-                            set.reps >= exercise.target_reps &&
-                            set.weight >= exercise.current_weight
-                        );
-                    });
-    
-                    if (is_eligible) {
-                        available_exercises.push(exercise);
+
+                const available_exercises = [];
+
+                // For each exercise, determine if the goal was met:
+                // reps >= target reps
+                exercises.rows.forEach((exercise) => {
+                    const exercise_id = exercise.exercise_id;
+                    const matching_sets = sets.rows.filter(
+                        (set) => set.exercise_id === exercise_id
+                    );
+                    const set_count = matching_sets.length;
+
+                    // Check sets requirement
+                    if (set_count >= exercise.target_sets) {
+                        const is_eligible = matching_sets.every((set) => {
+                            return (
+                                set.reps >= exercise.target_reps &&
+                                set.weight >= exercise.current_weight
+                            );
+                        });
+
+                        if (is_eligible) {
+                            available_exercises.push(exercise);
+                        }
                     }
-                }
-            });
-    
-            res.status(200).json(available_exercises);
-        } catch (error) {
-            console.error(error.message);
-            res.status(500).send("Failed to get requested information");
+                });
+
+                res.status(200).json(available_exercises);
+            } catch (error) {
+                console.error(error.message);
+                res.status(500).send("Failed to get requested information");
+            }
+        } else {
+            res.status(403).json(
+                "Unauthorized to create workout for this user"
+            );
         }
-    } else {
-        res.status(403).json(
-            "Unauthorized to create workout for this user"
-        );
     }
-});
+);
 
 // Update current_weight for specified exercises
 router.put("/progression/:user_id", authenticateToken, async (req, res) => {
@@ -331,15 +364,15 @@ router.put("/progression/:user_id", authenticateToken, async (req, res) => {
                     [exercise_ids[exercise_id]]
                 );
             }
-            res.status(200).json("Successfully progressed each exercise specified");
+            res.status(200).json(
+                "Successfully progressed each exercise specified"
+            );
         } catch (error) {
             console.error(error.message);
             res.status(500).json("Unable to progress exercises");
         }
     } else {
-        res.status(403).json(
-            "Unauthorized to create workout for this user"
-        );
+        res.status(403).json("Unauthorized to create workout for this user");
     }
 });
 
