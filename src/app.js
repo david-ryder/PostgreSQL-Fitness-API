@@ -1,3 +1,4 @@
+const { exec } = require("child_process");
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -8,6 +9,20 @@ const setsRouter = require("./routes/sets");
 
 // import the database query object
 const pool = require("./database_setup/database");
+
+const runCommand = () => {
+    const child = exec("npx localtunnel --port 3000");
+
+    // Capture the command output
+    child.stdout.on("data", (data) => {
+        console.log(data); // Output the data to the console
+    });
+
+    // Handle any error that occurs
+    child.on("error", (err) => {
+        console.error(err);
+    });
+};
 
 // use json
 app.use(express.json());
@@ -26,6 +41,7 @@ app.use(setsRouter);
 function startAPI() {
     app.listen(port, () => {
         console.log(`API running on port: ${port}`);
+        runCommand();
     });
 }
 
