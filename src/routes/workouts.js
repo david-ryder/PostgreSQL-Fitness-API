@@ -264,10 +264,7 @@ router.get("/workout-summary", authenticateToken, async (req, res) => {
 });
 
 // Get all exercises eligible for progression
-router.get(
-  "/workout-summary/progression",
-  authenticateToken,
-  async (req, res) => {
+router.get("/progression", authenticateToken, async (req, res) => {
     const authenticated_id = req.user.user_id.toString();
 
     if (authenticated_id) {
