@@ -76,7 +76,7 @@ router.post("/login", async (req, res) => {
 // Delete a user
 router.delete("/deleteuser", authenticateToken, async (req, res) => {
     const { username } = req.body;
-    const user_id = req.user.user_id;
+    const authenticated_id = req.user.user_id;
 
     try {
         const result = await pool.query(
@@ -88,9 +88,9 @@ router.delete("/deleteuser", authenticateToken, async (req, res) => {
             const found_user_id = result.rows[0].user_id;
 
             // Check if the authenticated user is the owner of the account
-            if (user_id === found_user_id) {
+            if (authenticated_id === found_user_id) {
                 await pool.query("DELETE FROM Users WHERE user_id = $1", [
-                    user_id,
+                    authenticated_id,
                 ]);
                 res.send(`User with username ${username} deleted successfully`);
             } else {

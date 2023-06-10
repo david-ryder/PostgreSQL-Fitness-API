@@ -222,11 +222,10 @@ router.delete("/workouts/:workout_id", authenticateToken, async (req, res) => {
 });
 
 // Get workout summary - all sets and exercises for past 12 hours
-router.get("/workout-summary/:user_id", authenticateToken, async (req, res) => {
-  const { user_id } = req.params;
+router.get("/workout-summary", authenticateToken, async (req, res) => {
   const authenticated_id = req.user.user_id.toString();
 
-  if (user_id === authenticated_id) {
+  if (authenticated_id) {
     try {
       const result = await pool.query(
         `
@@ -252,7 +251,7 @@ router.get("/workout-summary/:user_id", authenticateToken, async (req, res) => {
                 ORDER BY
                     e.name, s.created_at;
             `,
-        [user_id]
+        [authenticated_id]
       );
       res.status(200).json(result.rows);
     } catch (error) {
@@ -266,13 +265,12 @@ router.get("/workout-summary/:user_id", authenticateToken, async (req, res) => {
 
 // Get all exercises eligible for progression
 router.get(
-  "/workout-summary/progression/:user_id",
+  "/workout-summary/progression",
   authenticateToken,
   async (req, res) => {
-    const { user_id } = req.params;
     const authenticated_id = req.user.user_id.toString();
 
-    if (user_id === authenticated_id) {
+    if (authenticated_id) {
       try {
         // Get all sets completed within past 12 hours
         const sets = await pool.query(
@@ -285,7 +283,7 @@ router.get(
                     Sets.created_at >= NOW() - INTERVAL '12 hours'
                     AND Workouts.user_id = $1
             `,
-          [user_id]
+          [authenticated_id]
         );
 
         const set_ids = sets.rows.map((set) => set.set_id);
@@ -342,31 +340,36 @@ router.get(
 );
 
 // Update current_weight for specified exercises
-router.put("/progression/:user_id", authenticateToken, async (req, res) => {
-  const { user_id } = req.params;
-  const { exercise_ids } = req.body;
+router.put("/progression", authenticateToken, async (req, res) => {
+  const { exercise_id } = req.body;
   const authenticated_id = req.user.user_id.toString();
 
-  if (user_id === authenticated_id) {
-    try {
-      for (const exercise_id in exercise_ids) {
-        // Increment the current_weight += weight_modifier
-        await pool.query(
-          `
-                    UPDATE Exercises
-                    SET current_weight = current_weight + (SELECT weight_modifier FROM Exercises WHERE exercise_id = $1)
-                    WHERE exercise_id = $1
-                `,
-          [exercise_ids[exercise_id]]
-        );
-      }
+  try {
+    // get id of the user who created the exercise
+    const userResult = await pool.query(
+      "SELECT user_id FROM Exercises WHERE exercise_id = $1",
+      [exercise_id]
+    );
+
+    const user_id = userResult.rows[0].user_id.toString();
+
+    if (user_id === authenticated_id) {
+      // Increment the current_weight += weight_modifier
+      await pool.query(
+        `
+                      UPDATE Exercises
+                      SET current_weight = current_weight + (SELECT weight_modifier FROM Exercises WHERE exercise_id = $1)
+                      WHERE exercise_id = $1
+                  `,
+        [exercise_id]
+      );
       res.status(200).json("Successfully progressed each exercise specified");
-    } catch (error) {
-      console.error(error.message);
-      res.status(500).json("Unable to progress exercises");
+    } else {
+      res.status(403).json("Unauthorized to create workout for this user");
     }
-  } else {
-    res.status(403).json("Unauthorized to create workout for this user");
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json("Unable to progress exercises");
   }
 });
 
