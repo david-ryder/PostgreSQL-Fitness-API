@@ -7,9 +7,6 @@ const userRouter = require("./routes/user");
 const workoutExercisesRouter = require("./routes/workouts");
 const setsRouter = require("./routes/sets");
 
-// import the database query object
-const pool = require("./database_setup/database");
-
 const runCommand = () => {
     const child = exec("npx localtunnel --port 3000");
 
