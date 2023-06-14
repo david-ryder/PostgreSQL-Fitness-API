@@ -1,5 +1,5 @@
 {
-  "name": "postgresql-fitness-app",
+  "name": "postgresql-fitness-api",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
