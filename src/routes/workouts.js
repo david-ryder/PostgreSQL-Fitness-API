@@ -235,7 +235,8 @@ router.get("/workout-summary", authenticateToken, async (req, res) => {
                     e.exercise_id AS exercise_id,
                     e.name AS exercise_name,
                     s.weight,
-                    s.reps
+                    s.reps,
+                    s.set_id
                 FROM
                     Workouts w
                     INNER JOIN Exercises e ON w.workout_id = e.workout_id
