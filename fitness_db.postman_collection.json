@@ -1,19 +1,19 @@
 {
 	"info": {
-		"_postman_id": "4245071c-1f34-4738-b66a-45aab06c71de",
+		"_postman_id": "be8b3e21-2b11-4eb8-aba7-6ef24e5a111b",
 		"name": "fitness_db",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "27288404"
+		"_exporter_id": "24910535"
 	},
 	"item": [
 		{
-			"name": "Create user",
+			"name": "Register user",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"gabrielle\",\n    \"password\": \"perry\"\n}",
+					"raw": "{\n    \"email\": \"david.winfield2000@gmail.com\",\n    \"username\": \"david\",\n    \"password\": \"winfield\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -40,7 +40,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"gabrielle\",\n    \"password\": \"perry\"\n}",
+					"raw": "{\n    \"username\": \"david\",\n    \"password\": \"winfield\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -64,10 +64,16 @@
 			"name": "Delete user",
 			"request": {
 				"method": "DELETE",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozLCJpYXQiOjE2ODc1NDI4ODEsImV4cCI6MTY4ODE0NzY4MX0.W3qbK7V8D1bwVO2nhO2AG_ODimVrOA3Q46uQuJqr9Ew",
+						"type": "text"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"david\"\n}",
+					"raw": "{\n    \"username\": \"d\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -91,10 +97,16 @@
 			"name": "Create workout",
 			"request": {
 				"method": "POST",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJpYXQiOjE2ODc1NDI5MDgsImV4cCI6MTY4ODE0NzcwOH0.Ch2_8p_uF5MPn7b1EcZKfzGRUSYo_hcBiqZ0Kdol1fI",
+						"type": "text"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"name\": \"Full Body Workout\",\n  \"exercises\": [\n    {\n      \"name\": \"Squats\"\n    },\n    {\n      \"name\": \"Bench Press\"\n    },\n    {\n      \"name\": \"Deadlifts\"\n    },\n    {\n      \"name\": \"Pull-ups\"\n    }\n  ]\n}\n",
+					"raw": "{\n  \"name\": \"new workout\",\n  \"exercises\": [\n    {\n      \"name\": \"one\",\n      \"current_weight\": 100,\n      \"target_sets\": 3,\n      \"target_reps\": 10,\n      \"weight_modifier\": 10\n    },\n    {\n      \"name\": \"two\",\n      \"current_weight\": 100,\n      \"target_sets\": 3,\n      \"target_reps\": 10,\n      \"weight_modifier\": 10\n    },\n    {\n      \"name\": \"three\",\n      \"current_weight\": 100,\n      \"target_sets\": 3,\n      \"target_reps\": 10,\n      \"weight_modifier\": 10\n    },\n    {\n      \"name\": \"four\",\n      \"current_weight\": 100,\n      \"target_sets\": 3,\n      \"target_reps\": 10,\n      \"weight_modifier\": 10\n    },\n    {\n      \"name\": \"five\",\n      \"current_weight\": 100,\n      \"target_sets\": 3,\n      \"target_reps\": 10,\n      \"weight_modifier\": 10\n    }\n  ]\n}\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -102,14 +114,13 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:3000/users/1/workouts",
+					"raw": "localhost:3000/users/workouts",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
 						"users",
-						"1",
 						"workouts"
 					]
 				}
@@ -118,18 +129,30 @@
 		},
 		{
 			"name": "Fetch user's workouts",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJpYXQiOjE2ODc1NDI5MDgsImV4cCI6MTY4ODE0NzcwOH0.Ch2_8p_uF5MPn7b1EcZKfzGRUSYo_hcBiqZ0Kdol1fI",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
-					"raw": "localhost:3000/users/2/workouts",
+					"raw": "localhost:3000/users/workouts",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
 						"users",
-						"2",
 						"workouts"
 					]
 				}
@@ -140,17 +163,22 @@
 			"name": "Fetch workout's exercises",
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJpYXQiOjE2ODc1NDI5MDgsImV4cCI6MTY4ODE0NzcwOH0.Ch2_8p_uF5MPn7b1EcZKfzGRUSYo_hcBiqZ0Kdol1fI",
+						"type": "text"
+					}
+				],
 				"url": {
-					"raw": "localhost:3000/workouts/1/exercises",
+					"raw": "localhost:3000/workouts/9",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
 						"workouts",
-						"1",
-						"exercises"
+						"9"
 					]
 				}
 			},
@@ -160,10 +188,16 @@
 			"name": "Update workout and exercises",
 			"request": {
 				"method": "PUT",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJpYXQiOjE2ODc1NDI5MDgsImV4cCI6MTY4ODE0NzcwOH0.Ch2_8p_uF5MPn7b1EcZKfzGRUSYo_hcBiqZ0Kdol1fI",
+						"type": "text"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"name\": \"Gabrielle's workout\"\n}",
+					"raw": "{\n  \"name\": \"david's push workout\",\n  \"exercises\": [\n    {\n      \"name\": \"bench press\",\n      \"current_weight\": 69,\n      \"target_sets\": 1,\n      \"target_reps\": 2,\n      \"weight_modifier\": 3\n    },\n    {\n      \"name\": \"overhead press\",\n      \"current_weight\": 69,\n      \"target_sets\": 1,\n      \"target_reps\": 2,\n      \"weight_modifier\": 3\n    },\n    {\n      \"name\": \"barbell press\",\n      \"current_weight\": 420,\n      \"target_sets\": 1,\n      \"target_reps\": 2,\n      \"weight_modifier\": 3\n    }\n  ]\n}\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -171,33 +205,39 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:3000/workouts/2",
+					"raw": "localhost:3000/workouts/9",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
 						"workouts",
-						"2"
+						"9"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Delete workout and exercises",
+			"name": "Delete workout",
 			"request": {
 				"method": "DELETE",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo3LCJpYXQiOjE2ODU5MDM2MTIsImV4cCI6MTY4NjUwODQxMn0.swFiZRq4MuV_mnW4hJybsCDzEdXt5ecWPk7o_6Kuw_E",
+						"type": "text"
+					}
+				],
 				"url": {
-					"raw": "localhost:3000/workouts/3",
+					"raw": "localhost:3000/workouts/1",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
 						"workouts",
-						"3"
+						"1"
 					]
 				}
 			},
@@ -207,10 +247,16 @@
 			"name": "Create set",
 			"request": {
 				"method": "POST",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozLCJpYXQiOjE2ODc1MDg4NTYsImV4cCI6MTY4ODExMzY1Nn0.vAxVmXYrwYpooJANT_Lhx1nvErYDkGyKLwzQnBDm6v4",
+						"type": "text"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"weight\": 100,\n    \"reps\": 6\n}",
+					"raw": "{\n    \"weight\": 11,\n    \"reps\": 0\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -218,14 +264,14 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:3000/exercises/25/sets",
+					"raw": "localhost:3000/exercises/24/sets",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
 						"exercises",
-						"25",
+						"24",
 						"sets"
 					]
 				}
@@ -236,16 +282,22 @@
 			"name": "Fetch exercise's sets",
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpYXQiOjE2ODU3NzI4NDYsImV4cCI6MTY4NjM3NzY0Nn0.nYQ_ZH7uczEdhE3o9G_7Hixxh-Sbn0r3JjdqnZcUkbA",
+						"type": "text"
+					}
+				],
 				"url": {
-					"raw": "localhost:3000/exercises/25/sets",
+					"raw": "localhost:3000/exercises/2/sets",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
 						"exercises",
-						"25",
+						"2",
 						"sets"
 					]
 				}
@@ -256,16 +308,115 @@
 			"name": "Delete set",
 			"request": {
 				"method": "DELETE",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpYXQiOjE2ODU2NjMzODMsImV4cCI6MTY4NjI2ODE4M30.8Us69nDeZg6jRinONrNvaa6tnKzbzEHBtZ-vpdTqpRA",
+						"type": "text"
+					}
+				],
 				"url": {
-					"raw": "localhost:3000/sets/7",
+					"raw": "localhost:3000/sets/1",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
 						"sets",
-						"7"
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch workout summary (within 12 hours)",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpYXQiOjE2ODc1NDE3MzEsImV4cCI6MTY4ODE0NjUzMX0.CcvQyihwsvlrvtr9xHw_Pn6B5nl_KgRmx8FYkzRErr8",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/workout-summary",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"workout-summary"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get exercises eligible for progression",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJpYXQiOjE2ODc1NDQwOTcsImV4cCI6MTY4ODE0ODg5N30.Ca9QOagVjol6YrO1oTLyGw41ma0ok9-TwsYBpC5cyv0",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:3000/progression",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"progression"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Progress specified exercises",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJpYXQiOjE2ODc1NDU4MzEsImV4cCI6MTY4ODE1MDYzMX0.JIlKJNX7uJsujfEzMTd0a3Sd0Z0_sVwhzPqXAMuMK60",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"exercise_ids\": [33]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/progression",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"progression"
 					]
 				}
 			},
