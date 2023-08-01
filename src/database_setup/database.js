@@ -1,6 +1,4 @@
 // Set up database query object
-const fs = require("fs");
-const { connect } = require("http2");
 const { Pool } = require("pg");
 
 // Instantiate db query object with credentials to access the database
@@ -16,7 +14,7 @@ const createSchemas = async () => {
     try {
         await pool.query(`
             -- create the Users table
-            CREATE TABLE Users (
+            CREATE TABLE IF NOT EXISTS Users (
                 user_id SERIAL PRIMARY KEY,
                 username VARCHAR(50) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
@@ -24,7 +22,7 @@ const createSchemas = async () => {
                 created_at TIMESTAMP NOT NULL DEFAULT NOW()
             );
             -- create the Workouts table
-            CREATE TABLE Workouts (
+            CREATE TABLE IF NOT EXISTS Workouts  (
                 workout_id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL,
                 name VARCHAR(50) NOT NULL,
@@ -32,7 +30,7 @@ const createSchemas = async () => {
                 FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
             );
             -- create the Exercises table
-            CREATE TABLE Exercises (
+            CREATE TABLE IF NOT EXISTS Exercises (
                 exercise_id SERIAL PRIMARY KEY,
                 workout_id INTEGER NOT NULL,
                 user_id INTEGER NOT NULL,
@@ -44,7 +42,7 @@ const createSchemas = async () => {
                 FOREIGN KEY (workout_id) REFERENCES Workouts(workout_id) ON DELETE CASCADE
             );
             -- create the Sets table
-            CREATE TABLE Sets (
+            CREATE TABLE IF NOT EXISTS Sets (
                 set_id SERIAL PRIMARY KEY,
                 exercise_id INTEGER NOT NULL,
                 user_id INTEGER NOT NULL,
